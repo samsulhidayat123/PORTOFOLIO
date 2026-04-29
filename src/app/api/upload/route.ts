@@ -1,8 +1,5 @@
 // src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,30 +20,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create filename with timestamp
-    const timestamp = Date.now();
-    const ext = file.type.split('/')[1];
-    const filename = `project-${timestamp}.${ext}`;
-    const filepath = join(process.cwd(), 'public', 'images', filename);
-    const publicPath = `/images/${filename}`;
-
-    // Ensure directory exists
-    const dir = join(process.cwd(), 'public', 'images');
-    if (!existsSync(dir)) {
-      await mkdir(dir, { recursive: true });
+    const imgbbApiKey = process.env.IMGBB_API_KEY;
+    if (!imgbbApiKey) {
+      return NextResponse.json({ error: 'Server configuration error: ImgBB API key missing' }, { status: 500 });
     }
 
-    // Write file
-    await writeFile(filepath, buffer);
+    // Konversi file ke base64 agar aman dikirim melalui API Next.js
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString('base64');
 
-    return NextResponse.json({ 
-      success: true, 
-      path: publicPath,
-      filename 
+    const formDataToSend = new FormData();
+    formDataToSend.append('image', base64Image);
+
+    // Upload gambar ke ImgBB
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+      method: 'POST',
+      body: formDataToSend,
     });
+
+    const data = await response.json();
+
+    if (data.success) {
+      return NextResponse.json({ 
+        success: true, 
+        path: data.data.url, // URL gambar langsung dari ImgBB (misal: https://i.ibb.co/...)
+        filename: file.name
+      });
+    } else {
+      throw new Error(data.error?.message || 'Failed to upload to ImgBB');
+    }
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
