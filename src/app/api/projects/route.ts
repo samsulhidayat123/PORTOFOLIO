@@ -1,78 +1,102 @@
 // src/app/api/projects/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
+import { neon } from '@neondatabase/serverless';
 
-const DATA_FILE = join(process.cwd(), 'data', 'projects.json');
+const sql = neon(process.env.DATABASE_URL || '');
 
-// Ensure data directory exists
-async function ensureDataFile() {
+// Fungsi untuk memastikan tabel database ada
+async function ensureTableExists() {
   try {
-    await readFile(DATA_FILE);
-  } catch {
-    await writeFile(DATA_FILE, JSON.stringify([], null, 2));
+    await sql`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        link VARCHAR(255) NOT NULL,
+        tech JSONB NOT NULL,
+        size VARCHAR(50) NOT NULL,
+        image VARCHAR(255) NOT NULL
+      );
+    `;
+  } catch (error) {
+    console.error('Error creating table:', error);
   }
 }
 
 export async function GET() {
   try {
-    await ensureDataFile();
-    const data = await readFile(DATA_FILE, 'utf-8');
-    return NextResponse.json(JSON.parse(data));
+    await ensureTableExists();
+    const rows = await sql`SELECT * FROM projects ORDER BY id ASC`;
+    return NextResponse.json(rows);
   } catch (error) {
+    console.error('GET error:', error);
     return NextResponse.json({ error: 'Failed to read projects' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    await ensureDataFile();
-    const newProject = await request.json();
-    const data = await readFile(DATA_FILE, 'utf-8');
-    const projects = JSON.parse(data);
+    await ensureTableExists();
+    const project = await request.json();
+    const techJson = JSON.stringify(project.tech);
     
-    const id = Math.max(...projects.map((p: any) => p.id), 0) + 1;
-    const project = { ...newProject, id };
+    const rows = await sql`
+      INSERT INTO projects (title, description, link, tech, size, image)
+      VALUES (${project.title}, ${project.description}, ${project.link}, ${techJson}::jsonb, ${project.size}, ${project.image})
+      RETURNING *;
+    `;
     
-    projects.push(project);
-    await writeFile(DATA_FILE, JSON.stringify(projects, null, 2));
-    
-    return NextResponse.json(project, { status: 201 });
+    return NextResponse.json(rows[0], { status: 201 });
   } catch (error) {
+    console.error('POST error:', error);
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    await ensureDataFile();
-    const { id, ...updatedProject } = await request.json();
-    const data = await readFile(DATA_FILE, 'utf-8');
-    let projects = JSON.parse(data);
+    await ensureTableExists();
+    const project = await request.json();
+    const techJson = JSON.stringify(project.tech);
     
-    projects = projects.map((p: any) => (p.id === id ? { ...p, ...updatedProject, id } : p));
-    await writeFile(DATA_FILE, JSON.stringify(projects, null, 2));
+    const rows = await sql`
+      UPDATE projects 
+      SET title = ${project.title}, 
+          description = ${project.description}, 
+          link = ${project.link}, 
+          tech = ${techJson}::jsonb, 
+          size = ${project.size}, 
+          image = ${project.image}
+      WHERE id = ${project.id}
+      RETURNING *;
+    `;
     
-    return NextResponse.json({ id, ...updatedProject });
+    if (rows.length === 0) {
+       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json(rows[0]);
   } catch (error) {
+    console.error('PUT error:', error);
     return NextResponse.json({ error: 'Failed to update project' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    await ensureDataFile();
+    await ensureTableExists();
     const { searchParams } = new URL(request.url);
-    const id = parseInt(searchParams.get('id') || '');
+    const id = searchParams.get('id');
     
-    const data = await readFile(DATA_FILE, 'utf-8');
-    let projects = JSON.parse(data);
+    if (!id) {
+       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
     
-    projects = projects.filter((p: any) => p.id !== id);
-    await writeFile(DATA_FILE, JSON.stringify(projects, null, 2));
+    await sql`DELETE FROM projects WHERE id = ${id}`;
     
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('DELETE error:', error);
     return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
   }
 }
