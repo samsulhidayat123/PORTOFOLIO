@@ -17,11 +17,13 @@ export default async function Home() {
         <div className="flex-1">
           <h2 className="text-red-600 font-bold tracking-widest uppercase mb-2">Project.78</h2>
           <h1 className="text-5xl md:text-7xl font-black mb-6 leading-none">
-            I build web apps <br />
-            <span className="text-red-600">that feel sharp.</span>
+             Hey! <br />
+            <span className="text-red-600">I'am SamSul HidaYat.</span>
           </h1>
-          <p className="text-zinc-400 max-w-md mb-8">
-            Saya SamSuL HidayaT, mahasiswa Teknik Informatika yang membangun website full-stack, dashboard admin, dan interface modern yang cepat dipakai.
+          <p className="text-zinc-400 max-w-md mb-8 leading-relaxed">
+              Seorang mahasiswa Ilmu Komputer dan Tech Enthusiast yang membagi waktu antara bangku kuliah, mengajar, dan membangun berbagai eksperimen digital. 
+              <br /><br />
+              Selalu antusias dengan hal-hal yang melibatkan logika, kreativitas, dan teknologi.
           </p>
           <div className="flex gap-4 flex-wrap">
             <a
