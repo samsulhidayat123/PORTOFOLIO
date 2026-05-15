@@ -1,5 +1,6 @@
 [
   {
+    "id": 1,
     "title": "ori-link",
     "description": "terinspirasi dari linktree yang biasa ada di bio sosmed artis besar",
     "link": "https://github.com/samsulhidayat123/ORI-LINK",
@@ -10,7 +11,6 @@
       "Tailwind CSS"
     ],
     "size": "md:col-span-1",
-    "image": "/images/project-1772032777504.png",
-    "id": 1
+    "image": "/images/project-1772032777504.png"
   }
 ]

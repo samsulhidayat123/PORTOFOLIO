@@ -1,35 +1,14 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { BentoCard } from '@/components/bento/BentoCard';
+import { getProjects } from '@/lib/projectsStore';
 
-type Project = {
-  id: number;
-  title: string;
-  description: string;
-  link: string;
-  tech: string[];
-  size: string;
-  image: string;
-};
+export const dynamic = 'force-dynamic';
 
-export default function Home() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/projects')
-      .then(res => res.json())
-      .then(data => {
-        setProjects(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to load projects:', err);
-        setLoading(false);
-      });
-  }, []);
+export default async function Home() {
+  const projects = await getProjects().catch((error) => {
+    console.error('Failed to load projects:', error);
+    return null;
+  });
 
   return (
     <main className="min-h-screen p-6 md:p-24 max-w-7xl mx-auto bg-black text-white">
@@ -38,19 +17,26 @@ export default function Home() {
         <div className="flex-1">
           <h2 className="text-red-600 font-bold tracking-widest uppercase mb-2">Project.78</h2>
           <h1 className="text-5xl md:text-7xl font-black mb-6 leading-none">
-            Hey! I&apos;m <br />
-            <span className="text-red-600">SamSuL HidayaT</span>
+            I build web apps <br />
+            <span className="text-red-600">that feel sharp.</span>
           </h1>
           <p className="text-zinc-400 max-w-md mb-8">
-            Mahasiswa Teknik Informatika yang fokus pada full-stack web development dan desain brand Destruction.
+            Saya SamSuL HidayaT, mahasiswa Teknik Informatika yang membangun website full-stack, dashboard admin, dan interface modern yang cepat dipakai.
           </p>
           <div className="flex gap-4 flex-wrap">
-            <button className="bg-red-600 hover:bg-red-700 active:scale-95 text-white px-8 py-3 rounded-md font-bold transition">
+            <a
+              href="mailto:samaul1245sh@gmail.com"
+              className="bg-red-600 hover:bg-red-700 active:scale-95 text-white px-8 py-3 rounded-md font-bold transition"
+            >
               CONTACT ME
-            </button>
-            <button className="border border-zinc-700 hover:bg-zinc-800 active:scale-95 text-white px-8 py-3 rounded-md font-bold transition">
+            </a>
+            <a
+              href="/cv-samsul-hidayat.pdf"
+              download
+              className="border border-zinc-700 hover:bg-zinc-800 active:scale-95 text-white px-8 py-3 rounded-md font-bold transition"
+            >
               DOWNLOAD CV
-            </button>
+            </a>
           </div>
         </div>
 
@@ -68,36 +54,37 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Section Title */}
-      <div className="mb-8">
-        <h2 className="text-red-600 font-bold tracking-widest uppercase text-sm mb-1">Selected Work</h2>
-        <h3 className="text-3xl md:text-4xl font-black">PROJECTS</h3>
-      </div>
+      <section id="projects" className="scroll-mt-24">
+        {/* Section Title */}
+        <div className="mb-8">
+          <h2 className="text-red-600 font-bold tracking-widest uppercase text-sm mb-1">Selected Work</h2>
+          <h3 className="text-3xl md:text-4xl font-black">PROJECTS</h3>
+        </div>
 
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {loading ? (
-          <div className="col-span-full text-center py-12 text-zinc-500">
-            Loading projects...
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-zinc-500">
-            No projects yet
-          </div>
-        ) : (
-          projects.map((project) => (
-            <BentoCard key={project.id} {...project} />
-          ))
-        )}
-      </div>
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {projects === null ? (
+            <div className="col-span-full text-center py-12 text-zinc-500">
+              Projects failed to load. Please try again later.
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-zinc-500">
+              No projects yet
+            </div>
+          ) : (
+            projects.map((project) => (
+              <BentoCard key={project.id} {...project} />
+            ))
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="mt-24 pt-8 border-t border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-600 text-sm">
         <p className="font-bold tracking-widest uppercase">Project.78 © {new Date().getFullYear()}</p>
         <div className="flex gap-6">
           <a href="https://github.com/samsulhidayat123" className="hover:text-white transition">GitHub</a>
-          <a href="#" className="hover:text-white transition">LinkedIn</a>
-          <a href="#" className="hover:text-white transition">Twitter</a>
+          <a href="mailto:samaul1245sh@gmail.com" className="hover:text-white transition">Email</a>
         </div>
       </footer>
     </main>

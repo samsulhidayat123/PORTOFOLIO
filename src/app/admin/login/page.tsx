@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Notice } from '@/components/ui/Notice';
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
@@ -26,7 +27,7 @@ export default function AdminLogin() {
       } else {
         setError('Password salah');
       }
-    } catch (err) {
+    } catch {
       setError('Terjadi kesalahan');
     } finally {
       setLoading(false);
@@ -45,9 +46,7 @@ export default function AdminLogin() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
           {error && (
-            <div className="bg-red-900/20 border border-red-600 text-red-400 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
+            <Notice type="error" title="Login gagal" message={error} />
           )}
 
           <div suppressHydrationWarning>

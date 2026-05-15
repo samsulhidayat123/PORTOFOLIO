@@ -1,0 +1,15 @@
+SamSuL HidayaT
+Full-stack Web Developer
+Pasuruan, Indonesia
+
+Email: samaul1245sh@gmail.com
+GitHub: https://github.com/samsulhidayat123
+
+Profile
+Mahasiswa Teknik Informatika yang fokus pada full-stack web development, antarmuka web modern, dan desain brand.
+
+Selected Project
+ori-link
+Terinspirasi dari Linktree untuk halaman bio sosial media.
+Tech stack: TypeScript, Next.js, Node.js, Tailwind CSS
+Repository: https://github.com/samsulhidayat123/ORI-LINK

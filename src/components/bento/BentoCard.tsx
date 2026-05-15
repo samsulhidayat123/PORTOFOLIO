@@ -18,13 +18,12 @@ export function BentoCard({
   id,
   title,
   description,
-  link,
   tech,
   size,
   image,
 }: BentoCardProps) {
   return (
-    <Link href={link} target="_blank" rel="noopener noreferrer">
+    <Link href={`/projects/${id}`}>
       <div className={`${size} group relative h-48 md:h-80 lg:h-96 cursor-pointer overflow-hidden rounded-lg border border-zinc-800 hover:border-red-600 transition`}>
         {/* Background Image - Full Size */}
         {image && (
@@ -67,7 +66,7 @@ export function BentoCard({
 
           {/* Link */}
           <div className="flex items-center gap-2 text-white text-sm font-bold group-hover:gap-3 transition">
-            Lihat Projek <span>→</span>
+            Detail Project <span>-&gt;</span>
           </div>
         </div>
       </div>

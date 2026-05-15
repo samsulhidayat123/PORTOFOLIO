@@ -1,13 +1,14 @@
 // src/middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminRequest } from '@/lib/adminAuth';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protect /admin/dashboard
   if (pathname.startsWith('/admin/dashboard')) {
-    const token = request.cookies.get('admin-token');
-    if (!token) {
+    const isAuthenticated = await verifyAdminRequest(request);
+    if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }

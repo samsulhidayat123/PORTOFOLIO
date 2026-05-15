@@ -3,8 +3,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, Edit2, Plus, LogOut, Upload } from 'lucide-react';
+import { Trash2, Edit2, Plus, LogOut, Upload, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
+import { Notice } from '@/components/ui/Notice';
 
 type Project = {
   id: number;
@@ -16,6 +17,12 @@ type Project = {
   image: string;
 };
 
+type NoticeState = {
+  type: 'error' | 'success' | 'info' | 'warning';
+  title: string;
+  message: string;
+};
+
 export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +30,8 @@ export default function AdminDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string>('');
+  const [notice, setNotice] = useState<NoticeState | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const router = useRouter();
 
   const [formData, setFormData] = useState<Omit<Project, 'id'>>({
@@ -42,13 +51,42 @@ export default function AdminDashboard() {
   const fetchProjects = async () => {
     try {
       const res = await fetch('/api/projects');
+      if (!res.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+
       const data = await res.json();
+      if (!Array.isArray(data)) {
+        throw new Error(data.error || 'Invalid project response');
+      }
+
       setProjects(data);
+      setNotice(null);
     } catch (error) {
       console.error('Failed to fetch projects:', error);
+      setNotice({
+        type: 'error',
+        title: 'Gagal memuat',
+        message: 'Gagal memuat project. Cek koneksi database atau file data lokal.',
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  const refreshProjects = async () => {
+    const res = await fetch('/api/projects', { cache: 'no-store' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error || 'Failed to refresh projects');
+    }
+
+    const data = await res.json();
+    if (!Array.isArray(data)) {
+      throw new Error(data.error || 'Invalid project response');
+    }
+
+    setProjects(data);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,12 +107,26 @@ export default function AdminDashboard() {
         const data = await res.json();
         setFormData({ ...formData, image: data.path });
         setUploadPreview(data.path);
+        setNotice({
+          type: 'success',
+          title: 'Upload berhasil',
+          message: 'Gambar project sudah siap dipakai.',
+        });
       } else {
-        alert('Upload failed');
+        const data = await res.json().catch(() => null);
+        setNotice({
+          type: 'error',
+          title: 'Upload gagal',
+          message: data?.error || 'Upload gambar gagal',
+        });
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Upload error');
+      setNotice({
+        type: 'error',
+        title: 'Upload gagal',
+        message: 'Upload gambar gagal',
+      });
     } finally {
       setUploading(false);
     }
@@ -82,9 +134,14 @@ export default function AdminDashboard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNotice(null);
     
     if (!formData.image) {
-      alert('Please upload an image');
+      setNotice({
+        type: 'warning',
+        title: 'Gambar belum ada',
+        message: 'Upload gambar project dulu bro.',
+      });
       return;
     }
 
@@ -96,10 +153,19 @@ export default function AdminDashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingId, ...formData }),
         });
-        if (res.ok) {
-          setProjects(projects.map(p => p.id === editingId ? { ...p, ...formData } : p));
-          setEditingId(null);
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.error || 'Failed to update project');
         }
+
+        await refreshProjects();
+        setEditingId(null);
+        setNotice({
+          type: 'success',
+          title: 'Project diupdate',
+          message: 'Perubahan project sudah tersimpan.',
+        });
       } else {
         // Create
         const res = await fetch('/api/projects', {
@@ -107,27 +173,54 @@ export default function AdminDashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        if (res.ok) {
-          const newProject = await res.json();
-          setProjects([...projects, newProject]);
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.error || 'Failed to create project');
         }
+
+        await refreshProjects();
+        setNotice({
+          type: 'success',
+          title: 'Project dibuat',
+          message: 'Project baru sudah masuk ke dashboard.',
+        });
       }
       resetForm();
     } catch (error) {
       console.error('Failed to save project:', error);
+      setNotice({
+        type: 'error',
+        title: 'Gagal menyimpan',
+        message: 'Project gagal disimpan. Coba lagi atau cek konfigurasi database.',
+      });
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Yakin mau hapus project ini?')) return;
-    
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
     try {
-      const res = await fetch(`/api/projects?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setProjects(projects.filter(p => p.id !== id));
+      const res = await fetch(`/api/projects?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to delete project');
       }
+
+      await refreshProjects();
+      setNotice({
+        type: 'success',
+        title: 'Project dihapus',
+        message: `"${deleteTarget.title}" sudah dihapus dari dashboard.`,
+      });
+      setDeleteTarget(null);
     } catch (error) {
       console.error('Failed to delete project:', error);
+      setNotice({
+        type: 'error',
+        title: 'Gagal menghapus',
+        message: 'Project gagal dihapus.',
+      });
     }
   };
 
@@ -159,8 +252,8 @@ export default function AdminDashboard() {
     setShowForm(false);
   };
 
-  const handleLogout = () => {
-    document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
     router.push('/admin/login');
   };
 
@@ -185,6 +278,15 @@ export default function AdminDashboard() {
             Logout
           </button>
         </div>
+
+        {notice && (
+          <Notice
+            type={notice.type}
+            title={notice.title}
+            message={notice.message}
+            className="mb-8"
+          />
+        )}
 
         {/* Add Project Button */}
         {!showForm && (
@@ -248,7 +350,12 @@ export default function AdminDashboard() {
                 )}
 
                 {uploading && (
-                  <div className="text-center text-sm text-zinc-500 mt-2">Uploading...</div>
+                  <Notice
+                    type="info"
+                    title="Uploading"
+                    message="Gambar sedang diupload, tunggu sebentar."
+                    className="mt-4"
+                  />
                 )}
               </div>
 
@@ -277,12 +384,12 @@ export default function AdminDashboard() {
 
               {/* Link */}
               <div>
-                <label className="block text-sm font-bold mb-2 uppercase">Link (GitHub/Demo)</label>
+                <label className="block text-sm font-bold mb-2 uppercase">Project URL (bebas)</label>
                 <input
                   type="url"
                   value={formData.link}
                   onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  placeholder="https://github.com/..."
+                  placeholder="https://demo-atau-link-project.com"
                   className="w-full bg-black border border-zinc-700 rounded px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-red-600"
                   required
                 />
@@ -294,7 +401,7 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   value={formData.tech.join(', ')}
-                  onChange={(e) => setFormData({ ...formData, tech: e.target.value.split(',').map(t => t.trim()) })}
+                  onChange={(e) => setFormData({ ...formData, tech: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
                   placeholder="React, Tailwind, Next.js"
                   className="w-full bg-black border border-zinc-700 rounded px-4 py-2 text-white focus:outline-none focus:border-red-600"
                 />
@@ -384,7 +491,7 @@ export default function AdminDashboard() {
                         <Edit2 size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(project.id)}
+                        onClick={() => setDeleteTarget(project)}
                         className="bg-red-600 hover:bg-red-700 p-2 rounded transition"
                         title="Delete"
                       >
@@ -398,6 +505,41 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-950 p-6 shadow-2xl shadow-black">
+            <div className="mb-5 flex items-start gap-3">
+              <div className="rounded-md border border-red-600/60 bg-red-950/40 p-2 text-red-400">
+                <AlertTriangle size={22} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-widest">Hapus Project?</h2>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                  Project &quot;{deleteTarget.title}&quot; akan dihapus dari dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 rounded-md bg-zinc-800 px-4 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-zinc-700"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="flex-1 rounded-md bg-red-600 px-4 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-red-700"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

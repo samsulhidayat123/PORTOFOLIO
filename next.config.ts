@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Mengganti domains yang deprecated dengan remotePatterns
     remotePatterns: [
       {
         protocol: 'http',
@@ -11,13 +10,9 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**', // Mengizinkan semua domain gambar (berguna untuk testing awal)
+        hostname: 'i.ibb.co',
       },
     ],
-  },
-  // Mengaktifkan fitur untuk sistem CRUD
-  experimental: {
-    // Server Actions sudah stabil di versi terbaru, tapi tetap biarkan blok ini jika ingin menambah opsi lain
   },
 };
 

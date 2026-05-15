@@ -1,0 +1,47 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 560 >>
+stream
+BT
+/F1 24 Tf
+72 720 Td
+(SamSuL HidayaT) Tj
+/F1 14 Tf
+0 -34 Td
+(Full-stack Web Developer - Pasuruan, Indonesia) Tj
+0 -28 Td
+(Email: samaul1245sh@gmail.com) Tj
+0 -22 Td
+(GitHub: https://github.com/samsulhidayat123) Tj
+0 -40 Td
+(Profile) Tj
+0 -22 Td
+(Mahasiswa Teknik Informatika yang fokus membangun website full-stack,) Tj
+0 -18 Td
+(dashboard admin, dan interface modern yang cepat dipakai.) Tj
+0 -40 Td
+(Selected Project) Tj
+0 -22 Td
+(ori-link - halaman bio sosial media terinspirasi dari Linktree.) Tj
+0 -22 Td
+(Tech stack: TypeScript, Next.js, Node.js, Tailwind CSS.) Tj
+0 -22 Td
+(Repository: https://github.com/samsulhidayat123/ORI-LINK) Tj
+ET
+endstream
+endobj
+trailer
+<< /Root 1 0 R >>
+%%EOF
